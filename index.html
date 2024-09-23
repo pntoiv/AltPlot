@@ -452,9 +452,14 @@ default is 0.</p>
 
 # If you used av_renderer from the av package, you can save the animation as, for example, .mp4</code></pre>
 </div>
+<img src= "https://raw.githubusercontent.com/pntoiv/AltPlot/main/GIF1.gif">
+</div>
+  
+</div>
 <div id="same-repeated-to-different-time-subset" class="section level3">
 <h3>Same repeated to different time subset</h3>
 </div>
+<img src= "https://raw.githubusercontent.com/pntoiv/AltPlot/main/GIF2.gif">
 </div>
 <div id="interactive-plotting" class="section level1">
 <h1>Interactive plotting</h1>
@@ -476,12 +481,13 @@ TrackData &lt;- TrackData %&gt;% mutate(X=x_, Y=y_)
 
 TrackData$ID &lt;- as.factor(TrackData$ID)
 TrackData$t_ &lt;- as.POSIXct(TrackData$t_, &quot;%Y-%m-%d %H:%M:%S&quot;, tz=&quot;UTC&quot;)</code></pre>
-<p>ChatGPT prompt: “Hey! Create me a code in R using shiny and plotly. I
+<p>ChatGPT prompt:</p>
+<pre class="r"><code>“Hey! Create me a code in R using shiny and plotly. I
 want this code to use data.frame named”TrackData”. Make me plot device
 that where I can switch between individuals (ID column) and plot types.
 I want to be able to switch between two plot types: one where X axis is
 X column and Y axis is Y column, and another where X axis is t_ column
-and y axis is NSD column.”</p>
+and y axis is NSD column.”</code></pre>
 <pre class="r"><code># Sample UI
 ui &lt;- fluidPage(
   
