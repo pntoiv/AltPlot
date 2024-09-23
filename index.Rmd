@@ -1,0 +1,149 @@
+---
+title: "Alternative plots"
+author: "Pyry Toivonen"
+date: "2024-09-23"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Animation
+
+### Setup
+```{r message=FALSE, warning=FALSE}
+library(tidyverse) # ggplot + data management
+library(sf) # For spatial data management
+library(gganimate) # Animation features for ggplot
+library(gifski) # for GIF rendering, doesn't necessarily had to be loaded just installed
+
+setwd("//utuhome.utu.fi/pntoiv/AltPlotsPres") # Working directory
+```
+
+### Data import and management
+
+For data we have GPS track data for coastal raccoon dogs and Island vector data
+```{r}
+TrackData <- read.csv("TrackData.csv")
+Islands <- st_read("Islands.gpkg") # TIP: use GeoPackage format for vector data instead of shapefiles! Better handling of columns and suitability with R in my opinion.
+
+str(TrackData)
+```
+
+We will work with smaller subset of the data to visualize the behavior of two raccoon dogs that partnered later on
+```{r}
+# We want date-time column to be in date-time format.
+TrackData$t_ <- as.POSIXct(TrackData$t_, "%Y-%m-%d %H:%M:%S", tz="UTC")
+
+# Filtering data only to two individuals and for dates before 2021.
+TrackSubset <- TrackData %>%
+   filter(ID %in% c("R3","R4")) %>%
+   filter(t_ < "2021-01-01 00:00")
+
+
+```
+
+### Plotting the data and animating it
+
+Plot the data conventionally. Here you form the basis for the animation.
+
+Here I filter the Island data to only include the islands that the raccoon dogs visited
+```{r}
+p <- ggplot() +
+  geom_sf(data=filter(Islands, ID %in% TrackSubset$SaarID), fill="gray", color="gray") +
+  geom_point(data=TrackSubset, aes(x=x_, y=y_, color=ID), alpha=0.8) +
+  theme_classic() 
+
+
+p
+```
+
+Here it is important that the GPS track data is plotted with geom_point and not as spatial object (geom_sf), because animation doesn't support geom_sf(). Spatial point data can always be plotted with geom_point, because spatial coordinates can be put into X and Y axis.
+
+
+Now the animation. The syntax works similar to ggplot2.
+```{r message=FALSE, warning=FALSE}
+Animation <- p + 
+  transition_time(t_)+ # Adds transition to the plot. This transition is time-based: see ?transition_time
+  ease_aes('linear')+ # This is the default easing function
+  ggtitle("Day: {frame_time}") 
+
+# Check how many unique dates are in the dataset
+length(unique(TrackSubset$t_)) # = 434
+```
+
+The number of unique dates should be our number of frames in the animation, so each date gets its own frame.
+When we do it like this, FPS (frames per second) means dates per second.
+
+Now we make animation that has 434 frames and goes 3 frames per second, so it goes through 3 dates (date-time) in a second.
+
+The width, height and resolution of the animation is experimental choice. I have found these settings to satisfy my needs. End_pause and start_pause define how many times last or first frame is repeated, default is 0.
+
+Rendering of this GIF takes around 1 minute.
+
+```{r message=FALSE, warning=FALSE, eval=F, echo=T}
+GIF <- gganimate::animate(Animation, nframes=434, fps = 3,
+        width=1442, 
+        height=731,
+        res=150,
+        end_pause=3,
+        start_pause=3,
+        renderer=gifski_renderer()) #use av-package and av_renderer() if you want a video format
+
+```
+
+Save the animation as gif
+```{r eval=F, echo=T, message=FALSE, warning=FALSE}
+anim_save("GIF1.gif", GIF)
+
+# If you used av_renderer from the av package, you can save the animation as, for example, .mp4
+```
+
+
+### Same repeated to different time subset
+```{r include=FALSE}
+
+# Filtering data only to two individuals and for dates before 2021.
+TrackSubset2 <- TrackData %>%
+   filter(ID %in% c("R3","R4")) %>%
+   filter(t_ > "2021-02-01 00:00")
+```
+
+
+```{r echo=FALSE}
+p <- ggplot() +
+  geom_sf(data=filter(Islands, ID %in% TrackSubset2$SaarID), fill="gray", color="gray") +
+  geom_point(data=TrackSubset2, aes(x=x_, y=y_, color=ID), alpha=0.8) +
+  theme_classic() 
+
+p
+```
+
+```{r eval=FALSE, include=FALSE}
+Animation <- p + 
+  transition_time(t_)+ # Adds transition to the plot. This transition is time-based: see ?transition_time
+  ease_aes('linear')+ # This is the default easing function
+  ggtitle("Day: {frame_time}") 
+
+# Check how many unique dates are in the dataset
+length(unique(TrackSubset2$t_)) # = 434
+```
+```{r eval=FALSE, include=FALSE}
+GIF2 <- gganimate::animate(Animation, nframes=177, fps = 3,
+        width=1442, 
+        height=731,
+        res=150,
+        end_pause=0,
+        start_pause=0,
+        renderer=gifski_renderer())
+
+```
+```{r eval=FALSE, include=FALSE}
+anim_save("GIF2.gif", GIF2)
+```
+
+# Interactive plotting
